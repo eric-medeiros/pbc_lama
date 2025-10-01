@@ -21,3 +21,6 @@
 
 # Output files
 02_outputs/*
+
+ Arquivos html
+*.html
