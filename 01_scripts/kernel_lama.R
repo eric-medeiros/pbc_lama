@@ -14,7 +14,7 @@ caminho_kernel_tif <- here(pasta_output, "kernel_lama.tif")
 caminho_p95 <- here(pasta_output, "p95_lama.gpkg")
 caminho_p50 <- here(pasta_output, "p50_lama.gpkg")
 
-# função para calcular limiar (igual à que vc usa no pbc_pop)
+# função para calcular limiar
 calcular_limiar <- function(raster, prob) {
   valores <- terra::values(raster, na.rm = TRUE)
   valores_ordenados <- sort(valores, decreasing = TRUE)
@@ -57,6 +57,7 @@ dens <- density.ppp(dados_ppp,
 
 # converte para raster do pacote terra
 dens_raster <- rast(dens)
+crs(dens_raster) <- "EPSG:31983"
 
 # calcular o limiar para 50 e 95
 limiar_50 <- calcular_limiar(dens_raster, 0.50)
@@ -72,12 +73,10 @@ mascara_50[mascara_50 < limiar_50] <- NA
 # converter para polígonos para depois
 p95 <-
   as.polygons(mascara_95, dissolve = TRUE) %>%
-  st_as_sf() %>%
-  st_set_crs(st_crs(area_sf))
+  st_as_sf()
 p50 <-
   as.polygons(mascara_50, dissolve = TRUE) %>%
-  st_as_sf() %>%
-  st_set_crs(st_crs(area_sf))
+  st_as_sf()
 
 # salva pontos de dados, raster de kernel e polígonos de p50 e p95 como arquivo georreferenciado
 if (!dir.exists(pasta_output)) { dir.create(pasta_output) }
