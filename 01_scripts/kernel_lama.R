@@ -9,10 +9,10 @@ library(terra)
 caminho_dados_lama <- here("00_data/01_tratados_excel/dados_lama.xlsx")
 caminho_area_agua <- here("00_data/02_georefs/amostragem_area.gpkg")
 pasta_output <- here("02_outputs")
-caminho_pontos_lama <- here(pasta_output, "pontos_lama.gpkg")
-caminho_kernel_tif <- here(pasta_output, "kernel_lama.tif")
-caminho_p95 <- here(pasta_output, "p95_lama.gpkg")
-caminho_p50 <- here(pasta_output, "p50_lama.gpkg")
+caminho_pontos_lama <- here(pasta_output, "pontos.gpkg")
+caminho_kernel_tif <- here(pasta_output, "kernel.tif")
+caminho_p95 <- here(pasta_output, "p95.gpkg")
+caminho_p50 <- here(pasta_output, "p50.gpkg")
 
 # função para calcular limiar
 calcular_limiar <- function(raster, prob) {
