@@ -1,0 +1,148 @@
+---
+title: "LAMA"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: yeti
+---
+
+```{r setup, include=FALSE}
+library(here)
+library(flexdashboard)
+library(leaflet)
+library(sf)
+library(raster)
+library(htmltools)
+
+caminho_pasta_dados <- here("02_outputs")
+caminho_pontos <- here(caminho_pasta_dados, "pontos_lama.gpkg")
+caminho_kernel <- here(caminho_pasta_dados, "kernel_lama.tif")
+caminho_p50 <- here(caminho_pasta_dados, "p50_lama.gpkg")
+caminho_p95 <- here(caminho_pasta_dados, "p95_lama.gpkg")
+
+# Ler os arquivos
+pontos_lama <- st_read(caminho_pontos, quiet = TRUE)
+kernel_lama <- raster(caminho_kernel)
+p50_lama <- st_read(caminho_p50, quiet = TRUE)
+p95_lama <- st_read(caminho_p95, quiet = TRUE)
+
+# Transformar para WGS84 (4326) para o Leaflet
+pontos_lama <- st_transform(pontos_lama, 4326)
+kernel_lama <- projectRaster(kernel_lama, crs = crs("+init=epsg:4326"))
+p50_lama <- st_transform(p50_lama, 4326)
+p95_lama <- st_transform(p95_lama, 4326)
+```
+
+```{r}
+# Configurações de cores e opacidade
+cores <- list(
+  pontos = "yellow",
+  kernel = "red", 
+  p50 = "blue",
+  p95 = "green"
+)
+
+opacidade <- 0.4
+```
+
+# Mapa
+```{r}
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron", group = "Light") %>%
+  addProviderTiles("Esri.WorldImagery", group = "Satélite") %>%
+  addRasterImage(kernel_lama, 
+                 colors = "Reds",
+                 opacity = opacidade,
+                 group = "kernel_lama") %>%
+  addPolygons(data = p50_lama,
+              color = cores$p50,
+              fillColor = cores$p50,
+              fillOpacity = opacidade,
+              weight = 2,
+              group = "p50_lama",
+              popup = "p50_lama - Percentil 50") %>%
+  addPolygons(data = p95_lama,
+              color = cores$p95,
+              fillColor = cores$p95,
+              fillOpacity = opacidade,
+              weight = 2,
+              group = "p95_lama",
+              popup = "p95_lama - Percentil 95") %>%
+ addCircleMarkers(data = pontos_lama,
+                   color = cores$pontos,
+                   fillColor = cores$pontos,
+                   fillOpacity = 0.8,
+                   radius = 6,
+                   weight = 2,
+                   group = "pontos_lama",
+                   popup = ~paste0(
+                     "<strong>Avistagem ", avistagem, "</strong><br>",
+                     "Indivíduo: ", ifelse(is.na(individuo), "Não identificado", individuo), "<br>",
+                     "Data: ", data, "<br>",
+                     "Grupo: ", grupo, "<br>",
+                     "Tamanho do Grupo: ", tam_grupo, "<br>",
+                     "Composição: ", composicao, "<br>",
+                     "Adultos: ", Adulto, " | Juvenis: ", Juvenil, " | Infantes: ", Infante, "<br>",
+                     "Nº Fotos: ", n_fotos, "<br>",
+                     ifelse(!is.na(OBS) & OBS != "", paste0("Observação: ", OBS), "")
+                   )) %>%
+  addLayersControl(baseGroups = c("Satélite", "Light"),
+                   overlayGroups = c("pontos_lama", "kernel_lama", "p50_lama", "p95_lama"),
+                   options = layersControlOptions(collapsed = FALSE)) %>%
+  hideGroup(c("kernel_lama", "p50_lama", "p95_lama")) %>%
+  addScaleBar(position = "bottomleft") %>%
+  fitBounds(lng1 = min(st_bbox(pontos_lama)[1]), 
+            lat1 = min(st_bbox(pontos_lama)[2]),
+            lng2 = max(st_bbox(pontos_lama)[3]), 
+            lat2 = max(st_bbox(pontos_lama)[4]))
+```
+
+# Informações das Camadas
+column
+-------------
+
+### Como usar
+1. Trocar mapa base: Use o controle ☰ para selecionar entre:
+  - Satélite: Imagens de satélite
+  - Light: Mapa claro
+2. Controlar camadas: Use o mesmo controle para:
+  - Ligar/desligar cada camada individualmente
+  - Visualizar múltiplas camadas sobrepostas
+3. Interagir:
+  - Zoom: Scroll mouse ou botões +/-
+  - Navegar: Arrastar o mapa
+  - Detalhes: Clicar nos elementos para popups
+  
+column
+-------------
+
+### Legenda
+- 🟡 pontos_lama: Pontos de coleta
+- 🔴 kernel_lama: Área de influência
+- 🔵 p50_lama: Mediana
+- 🟢 p95_lama: Percentil superior
+
+column
+-------------
+
+### Arquivos
+**pontos_lama**
+- Tipo: Arquivo GPKG
+- Tamanho: 104 KB
+- Função: Pontos de amostra
+
+**kernel_lama**
+- Tipo: Arquivo TIF
+- Tamanho: 14 KB
+- Função: Kernel de densidade
+
+**p50_lama**
+- Tipo: Arquivo GPKG
+- Tamanho: 96 KB
+- Função: Percentil 50
+
+**p95_lama**
+- Tipo: Arquivo GPKG
+- Tamanho: 96 KB
+- Função: Percentil 95
